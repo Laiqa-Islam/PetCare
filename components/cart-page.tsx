@@ -1,0 +1,12 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowIcon, BagIcon } from "./icons";
+import { useCart } from "./cart-provider";
+
+export function CartPage(){
+  const{items,subtotal,hydrated,setQuantity,remove}=useCart();
+  if(!hydrated)return <main className="content-section shell"><div className="cart-loading" aria-live="polite">Loading your cart…</div></main>;
+  return <main><section className="page-hero compact-page-hero"><div className="shell"><p className="eyebrow">Your cart</p><h1>Review the essentials you chose.</h1><p>Adjust quantities, then continue to the secure test checkout.</p></div></section><section className="content-section shell">{items.length?<div className="cart-layout"><div className="cart-list">{items.map(item=><article className="cart-item" key={item.id}><Image src={item.imageUrl} alt={`${item.name} product`} width={180} height={150} unoptimized/><div><span>{item.category} · {item.pet}</span><h2>{item.name}</h2><p>${item.price.toFixed(2)} each</p><button className="danger-link" onClick={()=>remove(item.id)}>Remove</button></div><div className="quantity-control" aria-label={`Quantity for ${item.name}`}><button aria-label={`Decrease ${item.name}`} onClick={()=>setQuantity(item.id,item.quantity-1)}>−</button><input aria-label={`${item.name} quantity`} inputMode="numeric" value={item.quantity} onChange={event=>setQuantity(item.id,Number(event.target.value))}/><button aria-label={`Increase ${item.name}`} disabled={item.quantity>=item.stock} onClick={()=>setQuantity(item.id,item.quantity+1)}>+</button></div><strong className="line-total">${(item.price*item.quantity).toFixed(2)}</strong></article>)}</div><aside className="order-summary"><div className="summary-icon"><BagIcon/></div><h2>Order summary</h2><div><span>Items subtotal</span><strong>${subtotal.toFixed(2)}</strong></div><div><span>Delivery</span><strong>Test order · $0.00</strong></div><hr/><div className="summary-total"><span>Total</span><strong>${subtotal.toFixed(2)}</strong></div><Link className="button button-primary" href="/checkout">Continue to checkout <ArrowIcon/></Link><small>No real charge will be made.</small></aside></div>:<div className="empty-cart"><BagIcon size={42}/><h2>Your cart is empty</h2><p>Browse the shop and add something useful for your pet.</p><Link className="button button-primary" href="/products">Browse products</Link></div>}</section></main>;
+}

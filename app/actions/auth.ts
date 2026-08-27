@@ -50,7 +50,7 @@ const loginSchema = z.object({ email: z.string().trim().email(), password: z.str
 
 export async function login(_state: AuthState, formData: FormData): Promise<AuthState> {
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: "Enter a valid email and password." };
+  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors, error: "Review the highlighted login fields." };
   try {
     await connectToDatabase();
     const user = await User.findOne({ email: parsed.data.email.toLowerCase() }).select("+passwordHash");

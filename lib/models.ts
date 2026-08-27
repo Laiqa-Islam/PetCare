@@ -170,6 +170,21 @@ const notificationSchema = new Schema(
 
 const contactMessageSchema = new Schema({ name:{type:String,required:true},email:{type:String,required:true},topic:{type:String,required:true},message:{type:String,required:true,maxlength:3000},status:{type:String,enum:["new","reviewed"],default:"new"} },options);
 
+const orderSchema = new Schema(
+  {
+    orderNumber: { type: String, required: true, unique: true, index: true },
+    userId: { type: Schema.Types.ObjectId, ref: "User", index: true },
+    customer: { name: String, email: String, phone: String, address: String, city: String },
+    items: [{ productId: { type: Schema.Types.ObjectId, ref: "Product" }, name: String, price: Number, quantity: Number, imageUrl: String }],
+    subtotal: { type: Number, required: true },
+    paymentMethod: { type: String, enum: ["test_card", "cash_on_delivery"], required: true },
+    paymentStatus: { type: String, enum: ["paid_test", "pending"], required: true },
+    cardLast4: String,
+    status: { type: String, enum: ["placed", "processing", "cancelled"], default: "placed", index: true },
+  },
+  options,
+);
+
 export const User = models.User || model("User", userSchema);
 export const Pet = models.Pet || model("Pet", petSchema);
 export const HealthRecord = models.HealthRecord || model("HealthRecord", healthRecordSchema);
@@ -181,6 +196,7 @@ export const AdoptionInterest = models.AdoptionInterest || model("AdoptionIntere
 export const Review = models.Review || model("Review", reviewSchema);
 export const Notification = models.Notification || model("Notification", notificationSchema);
 export const ContactMessage = models.ContactMessage || model("ContactMessage", contactMessageSchema);
+export const Order = models.Order || model("Order", orderSchema);
 
 export type UserRole = "owner" | "vet" | "shelter" | "admin";
 export type LeanDocument = Record<string, unknown> & { _id: mongoose.Types.ObjectId };

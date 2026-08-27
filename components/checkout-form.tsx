@@ -1,0 +1,33 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { useActionState, useEffect, useState, type ReactNode } from "react";
+import { placeOrder, type CheckoutState } from "@/app/actions/orders";
+import { ArrowIcon, CheckIcon, ShieldIcon } from "./icons";
+import { useCart } from "./cart-provider";
+
+const initialState:CheckoutState={};
+
+function ErrorText({children}:{children?:ReactNode}){return children?<small className="field-error" role="alert">{children}</small>:null}
+
+export function CheckoutForm(){
+  const{items,subtotal,hydrated,clear}=useCart();
+  const[paymentMethod,setPaymentMethod]=useState<"test_card"|"cash_on_delivery">("test_card");
+  const[state,action,pending]=useActionState(placeOrder,initialState);
+  useEffect(()=>{if(state.success)clear()},[state.success,clear]);
+  const error=(field:string)=>state.fieldErrors?.[field]?.[0];
+  if(!hydrated)return <main className="content-section shell"><div className="cart-loading">Loading checkout…</div></main>;
+  if(state.success)return <main className="content-section shell"><section className="order-success" aria-live="polite"><span><CheckIcon size={34}/></span><p className="eyebrow">Order placed</p><h1>Your test order is confirmed.</h1><p>Reference <strong>{state.orderNumber}</strong>. A confirmation was sent through the configured test email inbox. No real payment was processed.</p><div><Link className="button button-primary" href="/products">Continue shopping</Link><Link className="button button-ghost" href="/">Return home</Link></div></section></main>;
+  if(!items.length)return <main className="content-section shell"><div className="empty-cart"><h1>There is nothing to check out yet.</h1><p>Add products to your cart before placing an order.</p><Link className="button button-primary" href="/products">Browse products</Link></div></main>;
+
+  return <main><section className="page-hero compact-page-hero"><div className="shell"><p className="eyebrow">Test checkout</p><h1>Delivery details and payment.</h1><p>Use the supplied test card or choose cash on delivery. This demo never makes a real charge.</p></div></section><section className="content-section shell checkout-layout">
+    <form className="checkout-form" action={action} noValidate>
+      <input type="hidden" name="items" value={JSON.stringify(items.map(item=>({productId:item.id,quantity:item.quantity})))}/>
+      <section className="checkout-section"><div className="checkout-section-head"><span>1</span><div><h2>Contact and delivery</h2><p>We use this information only for the test order record.</p></div></div><div className="form-row"><div className="field"><label htmlFor="checkout-name">Full name</label><input id="checkout-name" name="name" autoComplete="name" aria-invalid={Boolean(error("name"))}/><ErrorText>{error("name")}</ErrorText></div><div className="field"><label htmlFor="checkout-email">Email address</label><input id="checkout-email" name="email" type="email" autoComplete="email" aria-invalid={Boolean(error("email"))}/><ErrorText>{error("email")}</ErrorText></div></div><div className="form-row"><div className="field"><label htmlFor="checkout-phone">Contact number</label><input id="checkout-phone" name="phone" type="tel" autoComplete="tel" aria-invalid={Boolean(error("phone"))}/><ErrorText>{error("phone")}</ErrorText></div><div className="field"><label htmlFor="checkout-city">City</label><input id="checkout-city" name="city" autoComplete="address-level2" aria-invalid={Boolean(error("city"))}/><ErrorText>{error("city")}</ErrorText></div></div><div className="field"><label htmlFor="checkout-address">Delivery address</label><textarea id="checkout-address" name="address" autoComplete="street-address" aria-invalid={Boolean(error("address"))}/><ErrorText>{error("address")}</ErrorText></div></section>
+      <section className="checkout-section"><div className="checkout-section-head"><span>2</span><div><h2>Payment method</h2><p>Choose how this demonstration order should be recorded.</p></div></div><div className="payment-options"><label className={paymentMethod==="test_card"?"active":""}><input type="radio" name="paymentMethod" value="test_card" checked={paymentMethod==="test_card"} onChange={()=>setPaymentMethod("test_card")}/><span><strong>Dummy card payment</strong><small>Instant test approval · no charge</small></span></label><label className={paymentMethod==="cash_on_delivery"?"active":""}><input type="radio" name="paymentMethod" value="cash_on_delivery" checked={paymentMethod==="cash_on_delivery"} onChange={()=>setPaymentMethod("cash_on_delivery")}/><span><strong>Cash on delivery</strong><small>Recorded as payment pending</small></span></label></div>{paymentMethod==="test_card"?<div className="test-card-fields"><div className="test-payment-note"><ShieldIcon/><span><strong>Test payment only</strong>Use 4242 4242 4242 4242, any future MM/YY, and any 3-digit CVV.</span></div><div className="field"><label htmlFor="card-number">Card number</label><input id="card-number" name="cardNumber" inputMode="numeric" autoComplete="cc-number" placeholder="4242 4242 4242 4242" aria-invalid={Boolean(error("cardNumber"))}/><ErrorText>{error("cardNumber")}</ErrorText></div><div className="field"><label htmlFor="card-name">Name on card</label><input id="card-name" name="cardName" autoComplete="cc-name" aria-invalid={Boolean(error("cardName"))}/><ErrorText>{error("cardName")}</ErrorText></div><div className="form-row"><div className="field"><label htmlFor="expiry">Expiry</label><input id="expiry" name="expiry" inputMode="numeric" autoComplete="cc-exp" placeholder="12/30" aria-invalid={Boolean(error("expiry"))}/><ErrorText>{error("expiry")}</ErrorText></div><div className="field"><label htmlFor="cvv">Security code</label><input id="cvv" name="cvv" type="password" inputMode="numeric" autoComplete="cc-csc" placeholder="123" aria-invalid={Boolean(error("cvv"))}/><ErrorText>{error("cvv")}</ErrorText></div></div></div>:null}</section>
+      {state.error?<p className="form-error" role="alert">{state.error}</p>:null}<button className="button button-primary checkout-submit" disabled={pending}>{pending?"Placing test order…":<>Place test order · ${subtotal.toFixed(2)} <ArrowIcon/></>}</button>
+    </form>
+    <aside className="checkout-summary"><h2>In your order</h2>{items.map(item=><div className="checkout-summary-item" key={item.id}><Image src={item.imageUrl} alt="" width={64} height={64} unoptimized/><span><strong>{item.name}</strong><small>Qty {item.quantity}</small></span><b>${(item.price*item.quantity).toFixed(2)}</b></div>)}<hr/><div className="summary-total"><span>Total</span><strong>${subtotal.toFixed(2)}</strong></div><Link href="/cart">Edit cart</Link></aside>
+  </section></main>;
+}
