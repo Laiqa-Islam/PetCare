@@ -30,13 +30,26 @@ export async function connectToDatabase() {
   cache.promise ??= mongoose.connect(mongoUri, {
     bufferCommands: false,
     dbName: "furshield",
-  });
-
-  try {
-    cache.connection = await cache.promise;
-  } catch (error) {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+  }).then((connection) => {
+    cache.connection = connection;
+    return connection;
+  }).catch((error) => {
     cache.promise = null;
     throw error;
+  });
+
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const timeout = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error("Database connection timed out")), 5500);
+    });
+    cache.connection = await Promise.race([cache.promise, timeout]);
+  } catch (error) {
+    throw error;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
   }
 
   return cache.connection;

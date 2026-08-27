@@ -7,12 +7,12 @@ import { adoptablePets, careArticles, vets } from "@/lib/demo-data";
 import { siteMedia } from "@/lib/media";
 
 export default function Home() {
-  return <><a className="skip-link" href="#main-content">Skip to main content</a><SiteHeader /><main id="main-content">
+  return <div className="public-site"><a className="skip-link" href="#main-content">Skip to main content</a><SiteHeader /><main id="main-content">
     <section className="hero"><div className="shell hero-grid"><div className="hero-copy">
-      <p className="eyebrow"><span /> Care, kept together</p><h1>Every chapter of their life, <em>safely in one place.</em></h1>
-      <p className="hero-lede">FurShield brings health records, reminders, trusted vets, adoption, and everyday care into one calm home for the animals you love.</p>
-      <div className="hero-actions"><Link className="button button-primary" href="/register">Create your care space <ArrowIcon /></Link><Link className="button button-ghost" href="/vets"><SearchIcon /> Find a veterinarian</Link></div>
-      <div className="trust-row"><div className="avatar-stack" aria-hidden="true"><span>ML</span><span>BR</span><span>PN</span></div><p><strong>2,400+ care moments</strong><br />organized by our community this month</p></div>
+      <p className="eyebrow"><span /> Personal care record · PK</p><h1>Care has a memory. <em>Keep it intact.</em></h1>
+      <p className="hero-lede">One living record for health history, daily routines, appointments, adoption, and the people trusted with your animal&apos;s care.</p>
+      <div className="hero-actions"><Link className="button button-primary" href="/register">Start a pet record <ArrowIcon /></Link><Link className="button button-ghost" href="/vets"><SearchIcon /> Find a veterinarian</Link></div>
+      <div className="trust-row"><p><strong>Built around the animal</strong><br />Useful to owners, vets, and shelters without mixing their responsibilities.</p></div>
     </div><div className="hero-visual" aria-label="Example of a pet care profile">
       <div className="orbit orbit-one"><ShieldIcon /><span>Records protected</span></div><div className="orbit orbit-two"><CalendarIcon /><span>Vaccine due in 12 days</span></div>
       <div className="pet-portrait"><Image className="hero-pet-image" src={siteMedia.heroPet} alt="Mochi, a cat with a FurShield care profile" width={700} height={700} priority unoptimized/><div className="portrait-label"><div><small>CARE PROFILE</small><strong>Mochi</strong><span>Indoor cat · 3 years</span></div><span className="status-dot">Healthy</span></div></div>
@@ -32,5 +32,5 @@ export default function Home() {
 
     <section className="section adoption-strip"><div className="shell adoption-layout"><div><p className="eyebrow light">Looking for a companion?</p><h2>Four hopeful faces.<br />One could be waiting for you.</h2><p>Shelter listings include care notes and health status so you can begin the conversation with confidence.</p><Link className="button button-light" href="/adopt">Explore adoption <HeartIcon /></Link></div><div className="pet-stack">{adoptablePets.slice(0,3).map((pet, i) => <Link href={`/adopt#${pet.id}`} className={`pet-polaroid pet-${i + 1}`} key={pet.id}><div style={{background:pet.color}}><Image src={siteMedia.adoption[i]} alt={`${pet.name}, ${pet.breed}`} width={420} height={460} unoptimized/></div><strong>{pet.name}</strong><span>{pet.breed}</span></Link>)}</div></div></section>
     <section className="section shell final-cta"><div className="cta-mark"><ShieldIcon size={40} /></div><div><p className="eyebrow">Your pet&apos;s story starts here</p><h2>Build a care space as unique as they are.</h2><p>Free to begin. Add one pet or the whole family.</p></div><Link className="button button-primary" href="/register">Create an account <ArrowIcon /></Link></section>
-  </main><SiteFooter /></>;
+  </main><SiteFooter /></div>;
 }

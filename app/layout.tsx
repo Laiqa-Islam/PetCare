@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CartProvider } from "@/components/cart-provider";
 import "./globals.css";
+import "./public-redesign.css";
 
 export const metadata: Metadata = {
   title: { default: "FurShield — Care, kept together", template: "%s · FurShield" },
