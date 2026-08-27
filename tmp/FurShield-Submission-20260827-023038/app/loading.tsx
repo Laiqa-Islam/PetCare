@@ -1,0 +1,1 @@
+export default function Loading(){return <main className="route-state" aria-live="polite" aria-busy="true"><div className="loading-shield"/><h1>Preparing your care space…</h1><p>Loading the latest records securely.</p></main>}

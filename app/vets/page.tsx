@@ -1,0 +1,43 @@
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { PublicShell } from "@/components/public-shell";
+import { CalendarIcon, MapPinIcon, SearchIcon, StethoscopeIcon } from "@/components/icons";
+import { vets as demoVets } from "@/lib/demo-data";
+import { connectToDatabase } from "@/lib/db";
+import { siteMedia } from "@/lib/media";
+import { User } from "@/lib/models";
+import { getSession } from "@/lib/session";
+
+export const metadata: Metadata = { title: "Find a veterinarian" };
+type PublicVet={id:string;name:string;specialty:string;experience:number;location:string;rating:number;next:string;imageUrl:string};
+
+export default async function VetsPage({searchParams}:PageProps<"/vets">) {
+  const params=await searchParams;
+  const session=await getSession();
+  let rows:PublicVet[]=[];
+  try {
+    await connectToDatabase();
+    const docs=await User.find({role:"vet",verified:true}).select("name specialization experienceYears location address rating availability avatarUrl").lean();
+    rows=docs.map((vet,index)=>({id:String(vet._id),name:String(vet.name),specialty:Array.isArray(vet.specialization)&&vet.specialization.length?vet.specialization.join(" & "):"General veterinary care",experience:Number(vet.experienceYears||0),location:String(vet.location?.city||vet.address||"Location on request"),rating:Number(vet.rating||0),next:Array.isArray(vet.availability)&&vet.availability[0]?`${vet.availability[0].day}, ${vet.availability[0].start}`:"Contact for availability",imageUrl:String(vet.avatarUrl||siteMedia.vets[index%siteMedia.vets.length])}));
+  } catch {
+    rows=demoVets.map((vet,index)=>({...vet,imageUrl:siteMedia.vets[index%siteMedia.vets.length]}));
+  }
+  if(!rows.length)rows=demoVets.map((vet,index)=>({...vet,imageUrl:siteMedia.vets[index%siteMedia.vets.length]}));
+
+  const q=typeof params.q==="string"?params.q:"";
+  const location=typeof params.location==="string"?params.location:"";
+  const sort=typeof params.sort==="string"?params.sort:"rating";
+  const query=q.toLowerCase();
+  const area=location.toLowerCase();
+  const suggested=query.includes("skin")||query.includes("itch")?"dermatology":query.includes("bird")||query.includes("wing")?"avian":query.includes("vaccine")||query.includes("checkup")?"small animal":query;
+  const visible=rows.filter(vet=>(!suggested||`${vet.name} ${vet.specialty}`.toLowerCase().includes(suggested))&&(!area||vet.location.toLowerCase().includes(area))).sort((a,b)=>sort==="experience"?b.experience-a.experience:sort==="name"?a.name.localeCompare(b.name):b.rating-a.rating);
+
+  return <PublicShell>
+    <section className="page-hero"><div className="shell"><p className="eyebrow">Veterinarian directory</p><h1>Find the right care, closer to home.</h1><p>Search by condition, location, or specialty, compare availability and ratings, then request an appointment.</p></div></section>
+    <section className="content-section shell"><form className="directory-tools"><div className="search-field"><SearchIcon /><input name="q" defaultValue={q} aria-label="Search veterinarians" placeholder="Condition, specialty, or veterinarian" /></div><div className="search-field"><MapPinIcon /><input name="location" defaultValue={location} aria-label="Location" placeholder="Your area" /></div><select name="sort" aria-label="Sort veterinarians" defaultValue={sort}><option value="rating">Highest rated</option><option value="experience">Most experienced</option><option value="name">Name</option></select><button className="button button-primary">Search</button></form>
+      <div className="vet-directory">{visible.map((vet) => <article className="directory-card" key={vet.id}><Image className="vet-photo" src={vet.imageUrl} alt={`${vet.name} veterinary profile`} width={220} height={220} unoptimized/><div><p className="rating">★ {vet.rating||"New"} · Listed profile</p><h2>{vet.name}</h2><p>{vet.specialty}</p><div className="detail-tags"><span><StethoscopeIcon /> {vet.experience} years</span><span><MapPinIcon /> {vet.location}</span></div></div><div className="availability"><small>AVAILABILITY</small><strong><CalendarIcon /> {vet.next}</strong><Link className="button button-primary" href={session?.role==="owner"?"/dashboard/appointments":`/register?intent=appointment&vet=${vet.id}`}>Request appointment</Link></div></article>)}</div>
+      {!visible.length?<div className="empty-note">No listed veterinarian matches both filters. Try another specialty or nearby area.</div>:null}
+    </section>
+  </PublicShell>;
+}

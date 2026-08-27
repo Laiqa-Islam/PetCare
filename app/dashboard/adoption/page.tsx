@@ -1,0 +1,23 @@
+import Image from "next/image";
+import { submitInterest } from "@/app/actions/shelter";
+import { PawIcon } from "@/components/icons";
+import { connectToDatabase } from "@/lib/db";
+import { AdoptionInterest, AdoptionListing } from "@/lib/models";
+import { requireSession } from "@/lib/session";
+
+type ListingImage={url:string};
+
+export default async function DashboardAdoptionPage(){
+  const session=await requireSession(["owner"]);
+  await connectToDatabase();
+  const listings=await AdoptionListing.find({status:{$in:["available","pending"]}}).populate("shelterId","name address").lean();
+  const interestDocs=await AdoptionInterest.find({adopterId:session.userId}).lean();
+  const interests=new Map(interestDocs.map((interest)=>[String(interest.listingId),interest]));
+
+  return <main className="dashboard-page"><div className="dashboard-heading"><div><p className="eyebrow">Adoption</p><h1>Send a thoughtful interest form</h1><p>Tell the shelter about your home and experience. Replies and final decisions remain visible here and in notifications.</p></div></div><div className="pet-tabs">{listings.length?listings.map((item)=>{
+    const shelter=item.shelterId as unknown as {name:string;address:string};
+    const interest=interests.get(String(item._id));
+    const images=(Array.isArray(item.images)?item.images:[]) as ListingImage[];
+    return <article className="adoption-interest-card" key={String(item._id)}>{images[0]?<Image className="dashboard-animal-photo" src={images[0].url} alt={`${String(item.name)} adoption profile`} width={180} height={180} unoptimized/>:<div className="pet-card-mark"><PawIcon/></div>}<div><span>{String(item.species)} · {String(item.breed||"")}</span><h2>{String(item.name)}</h2><p>{String(item.healthStatus||"")} · {String(item.location||shelter?.address||"")}</p><small>Listed by {shelter?.name}</small>{interest?<div className="shelter-reply"><strong>Status: {String(interest.status)}</strong><p>{String(interest.shelterResponse||"The shelter has received your form and has not replied yet.")}</p></div>:null}</div>{interest?<span className={`status status-${interest.status}`}>Interest {String(interest.status)}</span>:<form className="compact-form" action={submitInterest}><input type="hidden" name="listingId" value={String(item._id)}/><div className="field"><label htmlFor={`message-${item._id}`}>Why this pet?</label><textarea id={`message-${item._id}`} name="message" required/></div><div className="form-row"><div className="field"><label htmlFor={`housing-${item._id}`}>Housing</label><input id={`housing-${item._id}`} name="housing" placeholder="House, apartment, yard…" required/></div><div className="field"><label htmlFor={`experience-${item._id}`}>Pet experience</label><input id={`experience-${item._id}`} name="experience" required/></div></div><button className="button button-primary">Send interest</button></form>}</article>;
+  }):<div className="empty-note">Registered shelter listings will appear here.</div>}</div></main>;
+}

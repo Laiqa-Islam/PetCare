@@ -1,0 +1,1 @@
+export default function DashboardLoading(){return <main className="dashboard-page" aria-live="polite" aria-busy="true"><div className="dashboard-skeleton"><span/><span/><span/><span/></div><p>Loading care records…</p></main>}
